@@ -1,0 +1,36 @@
+name: Transfer to production
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Download TEST release assets
+        run: |
+          mkdir testassets
+          gh release download test --dir testassets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Delete old PROD release
+        run: |
+          gh release delete prod -y || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create new PROD release
+        run: |
+          gh release create prod testassets/* \
+            --title "prod" \
+            --notes "Promoted from TEST"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
